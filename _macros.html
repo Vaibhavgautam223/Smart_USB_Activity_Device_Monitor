@@ -1,0 +1,19 @@
+{% macro event_badge(t) -%}
+{%- set colors={'CONNECTED':'success','DISCONNECTED':'secondary','BLOCKED':'danger','BLOCK_FAILED':'warning text-dark','UNBLOCK_FAILED':'warning text-dark','UNBLOCKED':'info text-dark','AUTHORIZED':'primary','DENIED':'danger','POLICY':'dark','RESET':'secondary'} -%}
+<span class="badge bg-{{colors.get(t,'secondary')}}">{{t}}</span>
+{%- endmacro %}
+
+{% macro auth_badge(d) -%}
+{%- if d.is_blocked -%}<span class="badge bg-danger">Blocked</span>
+{%- elif d.auth_status=='authorized' -%}<span class="badge bg-success">Authorized</span>
+{%- elif d.auth_status=='blocked' -%}<span class="badge bg-danger">Denied</span>
+{%- else -%}<span class="badge bg-warning text-dark">Pending</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro decision_buttons(d, csrf_token, back) -%}
+<div class="d-flex gap-1">
+{% if d.auth_status!='authorized' %}<form method="post" action="{{url_for('authorize_device',device_id=d.id)}}"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="back" value="{{back}}"><button class="btn btn-sm btn-success">Authorize</button></form>{% endif %}
+{% if d.auth_status!='blocked' %}<form method="post" action="{{url_for('block_device',device_id=d.id)}}" onsubmit="return confirm('Block this device? Windows will disable it.')"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="back" value="{{back}}"><button class="btn btn-sm btn-outline-danger">Block</button></form>{% endif %}
+{% if d.auth_status!='pending' %}<form method="post" action="{{url_for('reset_device',device_id=d.id)}}"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="back" value="{{back}}"><button class="btn btn-sm btn-outline-secondary">Reset</button></form>{% endif %}
+</div>
+{%- endmacro %}

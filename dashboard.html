@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% from '_macros.html' import event_badge, auth_badge, decision_buttons %}{% block title %}Dashboard{% endblock %}{% block content %}
+<div class="mb-4"><h2>USB Activity Dashboard</h2><p class="text-secondary">Monitor and control removable USB storage devices on this Windows PC.</p></div>
+
+<div class="panel mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h5 class="mb-1">Protection mode: {% if mode=='enforce' %}<span class="badge bg-danger">Enforce</span>{% else %}<span class="badge bg-secondary">Monitor only</span>{% endif %}</h5>
+      <p class="text-secondary mb-0">{% if mode=='enforce' %}Any USB storage device that is not authorized is disabled as soon as it is detected.{% else %}Devices are logged. Only devices you have blocked are disabled.{% endif %}</p>
+    </div>
+    {% if mode=='enforce' %}
+    <form method="post" action="{{url_for('set_policy')}}"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="mode" value="monitor"><button class="btn btn-outline-secondary">Switch to monitor only</button></form>
+    {% else %}
+    <form method="post" action="{{url_for('set_policy')}}" onsubmit="return confirm('Enforcement disables every USB storage device that is not authorized, including ones plugged in right now. Authorize your own devices first. Turn it on?')"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="mode" value="enforce"><button class="btn btn-danger">Enable enforcement</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="stat"><span>Registered devices</span><b>{{stats.total or 0}}</b></div></div>
+  <div class="col-md-3"><div class="stat green"><span>Connected now</span><b>{{stats.connected or 0}}</b></div></div>
+  <div class="col-md-3"><div class="stat amber"><span>Waiting for a decision</span><b>{{stats.pending or 0}}</b></div></div>
+  <div class="col-md-3"><div class="stat red"><span>Blocked now</span><b>{{stats.blocked or 0}}</b></div></div>
+</div>
+
+{% if pending %}
+<div class="panel mb-4"><h5>Needs your decision</h5><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Device</th><th>Manufacturer</th><th>Serial</th><th>Last seen</th><th></th></tr></thead><tbody>
+{% for d in pending %}<tr><td>{{d.device_name}}</td><td>{{d.manufacturer or '—'}}</td><td>{{d.serial_number or '—'}}</td><td>{{d.last_seen or '—'}}</td><td>{{decision_buttons(d,csrf_token,url_for('dashboard'))}}</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endif %}
+
+<div class="panel mb-4"><h5>Recent activity</h5><div class="table-responsive"><table class="table"><thead><tr><th>Device</th><th>Event</th><th>Time</th></tr></thead><tbody>{% for e in events %}<tr><td>{{e.device_name}}</td><td>{{event_badge(e.event_type)}}</td><td>{{e.event_time}}</td></tr>{% else %}<tr><td colspan="3" class="text-secondary">Connect or remove a USB storage device to see activity.</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="panel"><h5>USB devices</h5><div class="table-responsive"><table class="table"><thead><tr><th>Name</th><th>Manufacturer</th><th>Drive</th><th>Status</th><th>Authorization</th><th>Last seen</th></tr></thead><tbody>{% for d in devices %}<tr><td>{{d.device_name}}</td><td>{{d.manufacturer or '—'}}</td><td>{{d.drive_letter or '—'}}</td><td>{{'Connected' if d.connected else 'Disconnected'}}</td><td>{{auth_badge(d)}}</td><td>{{d.last_seen or '—'}}</td></tr>{% else %}<tr><td colspan="6" class="text-secondary">No USB storage devices recorded yet.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}

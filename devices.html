@@ -1,0 +1,13 @@
+{% extends 'base.html' %}{% from '_macros.html' import auth_badge, decision_buttons %}{% block title %}USB Devices{% endblock %}{% block content %}
+<h2>USB Device Inventory</h2><p class="text-secondary">Authorize the devices you trust. Anything else can be blocked.</p>
+<div class="panel">
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-md-8"><input class="form-control" name="q" value="{{q}}" placeholder="Search name, ID, manufacturer"></div>
+    <div class="col-md-3"><select class="form-select" name="status" onchange="this.form.submit()"><option value="">All authorization states</option><option value="pending" {{'selected' if status=='pending'}}>Pending</option><option value="authorized" {{'selected' if status=='authorized'}}>Authorized</option><option value="blocked" {{'selected' if status=='blocked'}}>Blocked</option></select></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100">Go</button></div>
+  </form>
+  <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Name</th><th>Manufacturer</th><th>Serial</th><th>Device ID</th><th>State</th><th>Drive</th><th>Authorization</th><th>Decided by</th><th></th></tr></thead><tbody>
+  {% for d in devices %}<tr class="{{'row-pending' if d.auth_status=='pending'}}"><td>{{d.device_name}}</td><td>{{d.manufacturer or '—'}}</td><td>{{d.serial_number or '—'}}</td><td class="small idcell">{{d.device_id}}</td><td>{{'Connected' if d.connected else 'Disconnected'}}</td><td>{{d.drive_letter or '—'}}</td><td>{{auth_badge(d)}}</td><td class="small">{% if d.decided_by %}{{d.decided_by}}<br><span class="text-secondary">{{d.decided_at}}</span>{% else %}—{% endif %}</td><td>{{decision_buttons(d,csrf_token,url_for('devices'))}}</td></tr>
+  {% else %}<tr><td colspan="9">No devices found.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>{% endblock %}
